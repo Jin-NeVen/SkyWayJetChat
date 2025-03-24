@@ -17,6 +17,7 @@
 package com.example.compose.jetchat
 
 import android.os.Bundle
+import android.Manifest
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
@@ -39,6 +40,7 @@ import androidx.navigation.NavController
 import androidx.navigation.fragment.NavHostFragment
 import com.example.compose.jetchat.components.JetchatDrawer
 import com.example.compose.jetchat.databinding.ContentMainBinding
+import com.example.compose.jetchat.videochat.domain.CheckPermissionsUseCase
 import kotlinx.coroutines.launch
 
 /**
@@ -47,11 +49,18 @@ import kotlinx.coroutines.launch
 class NavActivity : AppCompatActivity() {
     private val viewModel: MainViewModel by viewModels()
 
+    private val checkPermissionsUseCase = CheckPermissionsUseCase()
+
     @OptIn(ExperimentalMaterial3Api::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
         ViewCompat.setOnApplyWindowInsetsListener(window.decorView) { _, insets -> insets }
+
+        checkPermissionsUseCase(this, listOf(
+            Manifest.permission.CAMERA,
+            Manifest.permission.RECORD_AUDIO
+        ))
 
         setContentView(
             ComposeView(this).apply {
