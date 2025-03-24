@@ -237,4 +237,83 @@ open class VideoChatViewModel(
             }
         }
     }
+
+    private var streamPublishedHandler: ((publication: RoomPublication) -> Unit)? = {
+        Log.d(TAG, "gonna to subscribe stream by P2PRoom's streamPublishedHandler): publication id:${it.id}, publisher name: ${it.publisher?.name}")
+        subscribeRoomMembersAVStreamInternal(it)
+    }
+
+    private fun subscribeRoomMembersAVStreamInternal(publication: RoomPublication) {
+        viewModelScope.launch {
+            if (chatRoom == null || memberMe == null) {
+                return@launch
+            }
+            if (publication.publisher?.id == memberMe!!.id) {
+                Log.d(TAG, "cancel this subscription since it is local publication.publisher name: ${publication.publisher?.name}")
+                return@launch
+            }
+            val subscription = memberMe!!.subscribe(publication)
+            if (subscription == null) {
+                Log.d(TAG, "subscription is null")
+                return@launch
+            }
+            if (subscription.stream == null) {
+                Log.d(TAG, "subscription stream is null")
+                return@launch
+            }
+            subscription.stream?.let { stream ->
+                Log.d(TAG, "localP2PRoomMember subscription finished. subscription id: ${subscription.id}, subscription stream id: ${stream.id}, steam type: ${stream.contentType}")
+                val targetMember = members.find { it.id == publication.publisher?.id }
+                targetMember?.let { groupMember ->
+                    if (stream.contentType == Stream.ContentType.VIDEO) {
+                        withContext(Dispatchers.Main) {
+                            groupMember.videoStream.value = subscription.stream as RemoteVideoStream
+                        }
+                    }
+                    if (stream.contentType == Stream.ContentType.AUDIO) {
+                        groupMember.audioStream.value = subscription.stream as RemoteAudioStream
+                    }
+                }
+            }
+        }
+    }
+
+    private fun subscribeRoomMembersAVStream() {
+        if (chatRoom == null) {
+            Log.d(TAG, "p2p room not created/found")
+            return
+        }
+
+        chatRoom?.let { room ->
+            room.publications.forEach { publication ->
+                Log.d(TAG, "gonna to subscribe  ${publication.publisher?.name} 's ${publication.stream?.contentType} stream directly by p2pRoom publications id: ${publication.id},")
+                subscribeRoomMembersAVStreamInternal(publication)
+            }
+            room.onStreamPublishedHandler = streamPublishedHandler
+        }
+
+        memberMe?.let { me ->
+            me.onStreamUnpublishedHandler = { publication ->
+                Log.d(TAG, "localP2PRoomMember streamUnpublishedHandler stream unpublished: ${publication.id}")
+
+                val targetMember = members.find { it.id == publication.publisher?.id }
+
+                //TODO confirm whether if stream.dispose is necessary
+                targetMember?.let { groupMember ->
+                    publication.stream?.let { stream ->
+                        if (stream.contentType == Stream.ContentType.VIDEO) {
+                            (groupMember.videoStream.value as RemoteVideoStream).removeAllRenderer()
+                            groupMember.videoStream.value?.dispose()
+                            groupMember.videoStream.value = null
+                            Log.d(TAG, "remoteVideoStream disposed")
+                        } else if (stream.contentType == Stream.ContentType.AUDIO) {
+                            groupMember.audioStream.value?.dispose()
+                            groupMember.audioStream.value = null
+                            Log.d(TAG, "remoteAudioStream disposed")
+                        }
+                    }
+                }
+            }
+        }
+    }
 }
