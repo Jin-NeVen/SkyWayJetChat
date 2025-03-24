@@ -270,18 +270,29 @@ open class VideoChatViewModel(
                 targetMember?.let { groupMember ->
                     publication.stream?.let { stream ->
                         if (stream.contentType == Stream.ContentType.VIDEO) {
-                            (groupMember.videoStream.value as RemoteVideoStream).removeAllRenderer()
+                            (groupMember.videoStream.value as LocalVideoStream).removeAllRenderer()
                             groupMember.videoStream.value?.dispose()
                             groupMember.videoStream.value = null
-                            Log.d(TAG, "remoteVideoStream disposed")
+                            Log.d(TAG, "my video stream is disposed")
                         } else if (stream.contentType == Stream.ContentType.AUDIO) {
                             groupMember.audioStream.value?.dispose()
                             groupMember.audioStream.value = null
-                            Log.d(TAG, "remoteAudioStream disposed")
+                            Log.d(TAG, "my audio stream is disposed")
                         }
                     }
                 }
             }
+        }
+    }
+    fun leaveChatRoom() {
+        viewModelScope.launch {
+            if (memberMe != null) {
+                memberMe!!.leave()
+            }
+            members = emptyList()
+            chatRoom?.dispose()
+            SkyWayContext.dispose()
+            Log.d(TAG, "leaveChatRoom succeed")
         }
     }
 }

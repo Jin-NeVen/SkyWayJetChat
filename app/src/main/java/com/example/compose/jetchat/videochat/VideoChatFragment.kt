@@ -28,6 +28,7 @@ import androidx.compose.ui.unit.dp
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.fragment.app.viewModels
+import androidx.navigation.findNavController
 import com.example.compose.jetchat.FunctionalityNotAvailablePopup
 import com.example.compose.jetchat.MainViewModel
 import com.example.compose.jetchat.R
@@ -91,6 +92,7 @@ class VideoChatFragment: Fragment() {
                 JetchatTheme {
                     VideoChatRoom(
                         viewModel = viewModel,
+                        navController = findNavController()
                     )
                 }
             }
