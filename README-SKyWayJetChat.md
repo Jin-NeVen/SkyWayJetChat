@@ -38,7 +38,7 @@ TBA
 - VideoChatViewModel.subscribeRoomMembersAVStream
 
 ## 退室
-- TBA
+- VideoChatViewModel.leaveChatRoom
 
 ## NOTICE
 本サンプルアプリは、一応Android App Architectureに従って作ったつもりですが、便宜上一部のコードはBest Practiceに沿って実装されない場合がございます。
