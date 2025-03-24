@@ -37,4 +37,30 @@ open class VideoChatViewModel(
     }
 
 
+    init {
+        viewModelScope.launch {
+            initializeSkyWay(applicationContext)
+        }
+    }
+
+    private suspend fun initializeSkyWay(applicationContext: Context) {
+        // ServerよりSkyWay Auth Tokenを取得し、SkyWayContext.Optionsにセット
+        val option = SkyWayContext.Options(
+            authToken = TODO("SkyWay初期化するにはAuthTokenが必要です、AuthTokenの生成方法はこちらご覧ください：https://skyway.ntt.com/ja/docs/user-guide/android-sdk/quickstart-compose/#68"),
+            logLevel = Logger.LogLevel.VERBOSE
+        )
+
+        SkyWayContext.onErrorHandler = { error ->
+            Log.d(TAG, "skyway setup failed: ${error.message}")
+        }
+        if (SkyWayContext.setup(applicationContext, option)) {
+            Log.d(TAG, "skyway setup succeed")
+            createRoom()
+            createMemberMeAndJoinChatRoom()
+            captureMyVideoSteam(applicationContext)
+            captureMyAudioStream()
+            publishMyAVStream()
+            subscribeRoomMembersAVStream()
+        }
+    }
 }
