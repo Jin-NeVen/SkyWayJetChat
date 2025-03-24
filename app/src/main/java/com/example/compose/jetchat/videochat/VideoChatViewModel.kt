@@ -36,6 +36,7 @@ open class VideoChatViewModel(
         val TAG = "VideoChatViewModel"
     }
 
+    var chatRoom: SFURoom? = null
 
     init {
         viewModelScope.launch {
@@ -62,5 +63,72 @@ open class VideoChatViewModel(
             publishMyAVStream()
             subscribeRoomMembersAVStream()
         }
+    }
+
+    private suspend fun createRoom() {
+        Log.d(TAG, "createRoom")
+        /**
+         * 必要に応じてチャットRoomの名前を変えてください
+         */
+        val directChatRoomName = "VideoChatRoom"
+        chatRoom = SFURoom.findOrCreate(directChatRoomName)
+        if (chatRoom == null) {
+            Log.d(TAG, "failed to create/find chat room")
+            return
+        }
+        Log.d(TAG, "chat room created/found")
+        chatRoom?.let { room ->
+            room.onMemberListChangedHandler = {
+                Log.d(TAG, "member list changed")
+                //ここでmemberを取得してlistを更新する
+                syncMembers(room.members)
+
+                room.onMemberJoinedHandler = { member ->
+                    Log.d(TAG, " member ${member.name} joined")
+                }
+                room.onMemberLeftHandler = { member ->
+                    Log.d(TAG, "member ${member.name} left")
+                }
+                room.onPublicationListChangedHandler = {
+                    Log.d(TAG, "publication list changed")
+                }
+                room.onSubscriptionListChangedHandler = {
+                    Log.d(TAG, "subscription list changed")
+                }
+                room.onStreamUnpublishedHandler = {
+                    Log.d(TAG, "p2pRoom streamUnpublishedHandler stream unpublished: ${it.id}")
+                }
+            }
+        }
+    }
+
+    private fun syncMembers(newMembers: Set<RoomMember>) {
+        // 既存メンバーをマップ化しておく
+        val existingMap = members.associateBy { it.id }
+
+        // 新しいリストのIDだけ抽出
+        val newIds = newMembers.map { it.id }.toSet()
+
+        // 1. 削除対象
+        val toDelete = members.filter { it.id !in newIds }
+
+        // 2. 追加対象
+        val toAdd = newMembers
+            .filter { it.id !in existingMap }
+            .map { newMember ->
+                Member(
+                    name = newMember.name,
+                    id = newMember.id,
+                    isMe = false,
+                    videoStream = mutableStateOf(null),
+                    audioStream = mutableStateOf(null)
+                )
+            }
+
+        // 3. 残すメンバー
+        val toKeep = members.filter { it.id in newIds }
+
+        // 4. 更新後のリストを作成（追加 + 残す）
+        members = (toKeep + toAdd)
     }
 }
