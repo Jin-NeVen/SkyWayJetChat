@@ -37,6 +37,8 @@ open class VideoChatViewModel(
     }
 
     var chatRoom: SFURoom? = null
+    var memberMe: LocalSFURoomMember? = null
+    open var members by mutableStateOf(emptyList<Member>())
 
     init {
         viewModelScope.launch {
@@ -149,6 +151,88 @@ open class VideoChatViewModel(
                     Log.d(TAG, "member me(${MemberRepository.memberMeName}) join chat room succeed")
                 } else {
                     Log.d(TAG, "member me already joined chat room")
+                }
+            }
+        }
+    }
+
+    private suspend fun captureMyVideoSteam(context: Context) {
+        val me = members.find { it.id == MemberRepository.memberMeId }
+
+        me?.let {
+            Log.d(TAG, "captureLocalVideoSteam")
+            val cameraList = CameraSource.getCameras(context).toList()
+            cameraList.forEach {
+                Log.d(TAG, "camera list: $it")
+            }
+            val cameraOption = CameraSource.CapturingOptions(400,300)
+            if (cameraList.size >= 2) {
+                //Front cameraを使う
+                CameraSource.startCapturing(context, cameraList[1], cameraOption)
+            } else {
+                CameraSource.startCapturing(context, cameraList[0], cameraOption)
+            }
+
+            withContext(Dispatchers.Main) {
+                it.videoStream.value = CameraSource.createStream()
+            }
+        }
+
+    }
+    private fun captureMyAudioStream() {
+        val me = members.find { it.id == MemberRepository.memberMeId }
+        me?.let {
+            Log.d(TAG, "captureLocalAudioStream")
+            AudioSource.start()
+            it.audioStream.value = AudioSource.createStream()
+        }
+    }
+
+    fun publishMyAVStream() {
+        viewModelScope.launch {
+            publishMyAVStreamInternal()
+        }
+    }
+
+    private suspend fun publishMyAVStreamInternal() {
+        val me = members.find { it.id == MemberRepository.memberMeId }
+        if (memberMe == null || me == null) {
+            Log.d(TAG, "member me is null")
+            return
+        }
+        if (me.videoStream.value != null) {
+            Log.d(TAG, "member me publish video")
+            val publication = memberMe!!.publish(me.videoStream.value as LocalVideoStream)
+            if (publication == null) {
+                Log.d(TAG, "me publish video failed")
+            } else {
+                Log.d(TAG, "me publish video succeed")
+                publication.onConnectionStateChangedHandler = {
+                    Log.d(TAG, "me publish video connection state changed: $it")
+                }
+                publication.onSubscribedHandler = {
+                    Log.d(TAG, "me publish video subscribed")
+                }
+                publication.onUnsubscribedHandler = {
+                    Log.d(TAG, "publication onUnsubscribedHandler: me publish video unsubscribed")
+                }
+            }
+        }
+        if (me.audioStream != null) {
+            Log.d(TAG, "me publish audio")
+            val publication = memberMe!!.publish(me.audioStream.value as LocalAudioStream)
+            if (publication == null) {
+                Log.d(TAG, "me publish audio failed")
+            } else {
+                Log.d(TAG, "me publish audio succeed")
+                publication.onConnectionStateChangedHandler = {
+                    Log.d(TAG, "me publish audio connection state changed: $it")
+                }
+                publication.onSubscribedHandler = {
+                    Log.d(TAG, "me publish audio subscribed")
+                }
+                publication.onUnsubscribedHandler = {
+                    Log.d(TAG, "me publish audio unsubscribed")
                 }
             }
         }
