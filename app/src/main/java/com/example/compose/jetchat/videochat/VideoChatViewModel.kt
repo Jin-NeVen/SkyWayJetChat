@@ -131,4 +131,26 @@ open class VideoChatViewModel(
         // 4. 更新後のリストを作成（追加 + 残す）
         members = (toKeep + toAdd)
     }
+
+    private suspend fun createMemberMeAndJoinChatRoom() {
+        if (chatRoom == null) {
+            Log.d(TAG, "p2p room not created/found")
+            return
+        }
+
+        chatRoom?.let {
+            memberMe = it.join(RoomMember.Init(MemberRepository.memberMeName))
+            if (memberMe == null) {
+                Log.d(TAG, "member me join chat room failed")
+            } else {
+                MemberRepository.memberMeId = memberMe!!.id
+                if (members.find { it.id == MemberRepository.memberMeId } == null) {
+                    members = members + Member(name = memberMe!!.name, id = memberMe!!.id, isMe = true)
+                    Log.d(TAG, "member me(${MemberRepository.memberMeName}) join chat room succeed")
+                } else {
+                    Log.d(TAG, "member me already joined chat room")
+                }
+            }
+        }
+    }
 }
