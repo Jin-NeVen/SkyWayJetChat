@@ -57,6 +57,7 @@ secrets = "2.0.1"
 targetSdk = "33"
 version-catalog-update = "0.8.5"
 skyway_room = "2.6.1"
+lifecycleViewmodelAndroid = "2.8.7"
 
 [libraries]
 accompanist-adaptive = { module = "com.google.accompanist:accompanist-adaptive", version.ref = "accompanist" }
@@ -158,6 +159,7 @@ roborazzi-rule = { module = "io.github.takahirom.roborazzi:roborazzi-junit-rule"
 rometools-modules = { module = "com.rometools:rome-modules", version.ref = "rome" }
 rometools-rome = { module = "com.rometools:rome", version.ref = "rome" }
 skyway-room = { module = "com.ntt.skyway:room", version.ref = "skyway_room" }
+androidx-lifecycle-viewmodel-android = { group = "androidx.lifecycle", name = "lifecycle-viewmodel-android", version.ref = "lifecycleViewmodelAndroid" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "androidGradlePlugin" }
