@@ -111,6 +111,8 @@ dependencies {
     implementation(libs.androidx.compose.ui.viewbinding)
     implementation(libs.androidx.compose.ui.googlefonts)
 
+    implementation(libs.skyway.room)
+
     debugImplementation(libs.androidx.compose.ui.test.manifest)
 
     androidTestImplementation(libs.junit)
