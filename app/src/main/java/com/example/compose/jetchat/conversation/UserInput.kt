@@ -133,13 +133,17 @@ enum class EmojiStickerSelector {
 @Preview
 @Composable
 fun UserInputPreview() {
-    UserInput(onMessageSent = {})
+    UserInput(
+        onMessageSent = {},
+        navigateToVideoChat = {}
+    )
 }
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun UserInput(
     onMessageSent: (String) -> Unit,
+    navigateToVideoChat: () -> Unit,
     modifier: Modifier = Modifier,
     resetScroll: () -> Unit = {},
 ) {
@@ -193,6 +197,7 @@ fun UserInput(
                     resetScroll()
                     dismissKeyboard()
                 },
+                navigateToVideoChat = navigateToVideoChat,
                 currentInputSelector = currentInputSelector
             )
             SelectorExpanded(
@@ -282,6 +287,7 @@ private fun UserInputSelector(
     onSelectorChange: (InputSelector) -> Unit,
     sendMessageEnabled: Boolean,
     onMessageSent: () -> Unit,
+    navigateToVideoChat: () -> Unit,
     currentInputSelector: InputSelector,
     modifier: Modifier = Modifier
 ) {
@@ -317,7 +323,9 @@ private fun UserInputSelector(
             description = stringResource(id = R.string.map_selector_desc)
         )
         InputSelectorButton(
-            onClick = { onSelectorChange(InputSelector.PHONE) },
+            onClick = {
+                onSelectorChange(InputSelector.PHONE)
+                navigateToVideoChat() },
             icon = Icons.Outlined.Duo,
             selected = currentInputSelector == InputSelector.PHONE,
             description = stringResource(id = R.string.videochat_desc)

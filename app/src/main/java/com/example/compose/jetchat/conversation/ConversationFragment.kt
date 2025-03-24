@@ -55,6 +55,11 @@ class ConversationFragment : Fragment() {
                             bundle
                         )
                     },
+                    navigateToVideoChat = {
+                        findNavController().navigate(
+                            R.id.nav_videochat
+                        )
+                    },
                     onNavIconPressed = {
                         activityViewModel.openDrawer()
                     }

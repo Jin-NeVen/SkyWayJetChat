@@ -109,6 +109,7 @@ import kotlinx.coroutines.launch
 fun ConversationContent(
     uiState: ConversationUiState,
     navigateToProfile: (String) -> Unit,
+    navigateToVideoChat: () -> Unit,
     modifier: Modifier = Modifier,
     onNavIconPressed: () -> Unit = { }
 ) {
@@ -207,6 +208,7 @@ fun ConversationContent(
                         Message(authorMe, content, timeNow)
                     )
                 },
+                navigateToVideoChat = navigateToVideoChat,
                 resetScroll = {
                     scope.launch {
                         scrollState.scrollToItem(0)
@@ -557,7 +559,8 @@ fun ConversationPreview() {
     JetchatTheme {
         ConversationContent(
             uiState = exampleUiState,
-            navigateToProfile = { }
+            navigateToProfile = {},
+            navigateToVideoChat = {}
         )
     }
 }
