@@ -7,7 +7,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.AndroidViewModel
-import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.compose.jetchat.videochat.data.Member
 import com.example.compose.jetchat.videochat.data.MemberRepository
@@ -68,47 +67,38 @@ open class VideoChatViewModel(
     }
 
     private suspend fun createRoom() {
-        Log.d(TAG, "createRoom")
+        Log.d(TAG, "create video chat room")
         /**
+         * NOTICE
          * 必要に応じてチャットRoomの名前を変えてください
          */
-        val directChatRoomName = "VideoChatRoom"
-        chatRoom = SFURoom.findOrCreate(directChatRoomName)
+        val chatRoomName = "VideoChatRoom"
+        chatRoom = SFURoom.findOrCreate(chatRoomName)
         if (chatRoom == null) {
-            Log.d(TAG, "failed to create/find chat room")
+            Log.d(TAG, "failed to create/find video chat room")
             return
         }
-        Log.d(TAG, "chat room created/found")
+        Log.d(TAG, "video chat room created/found")
         chatRoom?.let { room ->
             room.onMemberListChangedHandler = {
                 Log.d(TAG, "member list changed")
                 //ここでmemberを取得してlistを更新する
                 syncMembers(room.members)
-
-                room.onMemberJoinedHandler = { member ->
-                    Log.d(TAG, " member ${member.name} joined")
-                }
-                room.onMemberLeftHandler = { member ->
-                    Log.d(TAG, "member ${member.name} left")
-                }
-                room.onPublicationListChangedHandler = {
-                    Log.d(TAG, "publication list changed")
-                }
-                room.onSubscriptionListChangedHandler = {
-                    Log.d(TAG, "subscription list changed")
-                }
-                room.onStreamUnpublishedHandler = {
-                    Log.d(TAG, "p2pRoom streamUnpublishedHandler stream unpublished: ${it.id}")
-                }
+            }
+            room.onMemberJoinedHandler = { member ->
+                Log.d(TAG, " member ${member.name} joined")
+            }
+            room.onMemberLeftHandler = { member ->
+                Log.d(TAG, "member ${member.name} left")
             }
         }
     }
 
     private fun syncMembers(newMembers: Set<RoomMember>) {
-        // 既存メンバーをマップ化しておく
+        // 既存メンバーをマップ化
         val existingMap = members.associateBy { it.id }
 
-        // 新しいリストのIDだけ抽出
+        // 新しいmember list のIDだけ抽出
         val newIds = newMembers.map { it.id }.toSet()
 
         // 1. 削除対象
@@ -127,30 +117,30 @@ open class VideoChatViewModel(
                 )
             }
 
-        // 3. 残すメンバー
+        // 3. 残すmember
         val toKeep = members.filter { it.id in newIds }
 
-        // 4. 更新後のリストを作成（追加 + 残す）
+        // 4. 更新後のmember listを作成（追加 + 残す）
         members = (toKeep + toAdd)
     }
 
     private suspend fun createMemberMeAndJoinChatRoom() {
         if (chatRoom == null) {
-            Log.d(TAG, "p2p room not created/found")
+            Log.d(TAG, "video chat room not created/found")
             return
         }
 
         chatRoom?.let {
             memberMe = it.join(RoomMember.Init(MemberRepository.memberMeName))
             if (memberMe == null) {
-                Log.d(TAG, "member me join chat room failed")
+                Log.d(TAG, "member me join video chat room failed")
             } else {
                 MemberRepository.memberMeId = memberMe!!.id
                 if (members.find { it.id == MemberRepository.memberMeId } == null) {
                     members = members + Member(name = memberMe!!.name, id = memberMe!!.id, isMe = true)
-                    Log.d(TAG, "member me(${MemberRepository.memberMeName}) join chat room succeed")
+                    Log.d(TAG, "member me(${MemberRepository.memberMeName}) join video chat room succeed")
                 } else {
-                    Log.d(TAG, "member me already joined chat room")
+                    Log.d(TAG, "member me already joined video chat room")
                 }
             }
         }
@@ -160,11 +150,8 @@ open class VideoChatViewModel(
         val me = members.find { it.id == MemberRepository.memberMeId }
 
         me?.let {
-            Log.d(TAG, "captureLocalVideoSteam")
+            Log.d(TAG, "capture my video stream")
             val cameraList = CameraSource.getCameras(context).toList()
-            cameraList.forEach {
-                Log.d(TAG, "camera list: $it")
-            }
             val cameraOption = CameraSource.CapturingOptions(400,300)
             if (cameraList.size >= 2) {
                 //Front cameraを使う
@@ -172,7 +159,6 @@ open class VideoChatViewModel(
             } else {
                 CameraSource.startCapturing(context, cameraList[0], cameraOption)
             }
-
             withContext(Dispatchers.Main) {
                 it.videoStream.value = CameraSource.createStream()
             }
@@ -182,7 +168,7 @@ open class VideoChatViewModel(
     private fun captureMyAudioStream() {
         val me = members.find { it.id == MemberRepository.memberMeId }
         me?.let {
-            Log.d(TAG, "captureLocalAudioStream")
+            Log.d(TAG, "capture my audio stream")
             AudioSource.start()
             it.audioStream.value = AudioSource.createStream()
         }
@@ -204,42 +190,24 @@ open class VideoChatViewModel(
             Log.d(TAG, "member me publish video")
             val publication = memberMe!!.publish(me.videoStream.value as LocalVideoStream)
             if (publication == null) {
-                Log.d(TAG, "me publish video failed")
+                Log.d(TAG, "member me publish video failed")
             } else {
-                Log.d(TAG, "me publish video succeed")
-                publication.onConnectionStateChangedHandler = {
-                    Log.d(TAG, "me publish video connection state changed: $it")
-                }
-                publication.onSubscribedHandler = {
-                    Log.d(TAG, "me publish video subscribed")
-                }
-                publication.onUnsubscribedHandler = {
-                    Log.d(TAG, "publication onUnsubscribedHandler: me publish video unsubscribed")
-                }
+                Log.d(TAG, "member me publish video succeed")
             }
         }
-        if (me.audioStream != null) {
-            Log.d(TAG, "me publish audio")
+        if (me.audioStream.value != null) {
+            Log.d(TAG, "member me publish audio")
             val publication = memberMe!!.publish(me.audioStream.value as LocalAudioStream)
             if (publication == null) {
-                Log.d(TAG, "me publish audio failed")
+                Log.d(TAG, "member me publish audio failed")
             } else {
-                Log.d(TAG, "me publish audio succeed")
-                publication.onConnectionStateChangedHandler = {
-                    Log.d(TAG, "me publish audio connection state changed: $it")
-                }
-                publication.onSubscribedHandler = {
-                    Log.d(TAG, "me publish audio subscribed")
-                }
-                publication.onUnsubscribedHandler = {
-                    Log.d(TAG, "me publish audio unsubscribed")
-                }
+                Log.d(TAG, "member me publish audio succeed")
             }
         }
     }
 
     private var streamPublishedHandler: ((publication: RoomPublication) -> Unit)? = {
-        Log.d(TAG, "gonna to subscribe stream by P2PRoom's streamPublishedHandler): publication id:${it.id}, publisher name: ${it.publisher?.name}")
+        Log.d(TAG, "subscribe stream: publication id:${it.id}, publisher name: ${it.publisher?.name}")
         subscribeRoomMembersAVStreamInternal(it)
     }
 
@@ -249,7 +217,7 @@ open class VideoChatViewModel(
                 return@launch
             }
             if (publication.publisher?.id == memberMe!!.id) {
-                Log.d(TAG, "cancel this subscription since it is local publication.publisher name: ${publication.publisher?.name}")
+                Log.d(TAG, "ignore my own publication")
                 return@launch
             }
             val subscription = memberMe!!.subscribe(publication)
@@ -262,7 +230,7 @@ open class VideoChatViewModel(
                 return@launch
             }
             subscription.stream?.let { stream ->
-                Log.d(TAG, "localP2PRoomMember subscription finished. subscription id: ${subscription.id}, subscription stream id: ${stream.id}, steam type: ${stream.contentType}")
+                Log.d(TAG, "subscription finished. subscription id: ${subscription.id}, subscription stream id: ${stream.id}, steam type: ${stream.contentType}")
                 val targetMember = members.find { it.id == publication.publisher?.id }
                 targetMember?.let { groupMember ->
                     if (stream.contentType == Stream.ContentType.VIDEO) {
@@ -280,13 +248,13 @@ open class VideoChatViewModel(
 
     private fun subscribeRoomMembersAVStream() {
         if (chatRoom == null) {
-            Log.d(TAG, "p2p room not created/found")
+            Log.d(TAG, "video chat room not created/found")
             return
         }
 
         chatRoom?.let { room ->
             room.publications.forEach { publication ->
-                Log.d(TAG, "gonna to subscribe  ${publication.publisher?.name} 's ${publication.stream?.contentType} stream directly by p2pRoom publications id: ${publication.id},")
+                Log.d(TAG, "subscribe  ${publication.publisher?.name} 's ${publication.stream?.contentType} stream directly by publications id: ${publication.id},")
                 subscribeRoomMembersAVStreamInternal(publication)
             }
             room.onStreamPublishedHandler = streamPublishedHandler
@@ -294,7 +262,7 @@ open class VideoChatViewModel(
 
         memberMe?.let { me ->
             me.onStreamUnpublishedHandler = { publication ->
-                Log.d(TAG, "localP2PRoomMember streamUnpublishedHandler stream unpublished: ${publication.id}")
+                Log.d(TAG, "streamUnpublishedHandler: ${publication.id}")
 
                 val targetMember = members.find { it.id == publication.publisher?.id }
 
