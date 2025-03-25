@@ -25,6 +25,7 @@ import com.ntt.skyway.core.content.remote.RemoteVideoStream
 import com.ntt.skyway.room.RoomPublication
 import com.ntt.skyway.room.member.RoomMember
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
@@ -259,33 +260,20 @@ open class VideoChatViewModel(
             }
             room.onStreamPublishedHandler = streamPublishedHandler
         }
-
-        memberMe?.let { me ->
-            me.onStreamUnpublishedHandler = { publication ->
-                Log.d(TAG, "streamUnpublishedHandler: ${publication.id}")
-
-                val targetMember = members.find { it.id == publication.publisher?.id }
-
-                //TODO confirm whether if stream.dispose is necessary
-                targetMember?.let { groupMember ->
-                    publication.stream?.let { stream ->
-                        if (stream.contentType == Stream.ContentType.VIDEO) {
-                            (groupMember.videoStream.value as LocalVideoStream).removeAllRenderer()
-                            groupMember.videoStream.value?.dispose()
-                            groupMember.videoStream.value = null
-                            Log.d(TAG, "my video stream is disposed")
-                        } else if (stream.contentType == Stream.ContentType.AUDIO) {
-                            groupMember.audioStream.value?.dispose()
-                            groupMember.audioStream.value = null
-                            Log.d(TAG, "my audio stream is disposed")
-                        }
-                    }
-                }
-            }
-        }
     }
     fun leaveChatRoom() {
-        viewModelScope.launch {
+        /**
+         * [NOTICE]
+         * SkyWayの退室処理は suspend 関数であり、完了までに時間がかかる可能性があります。
+         * 一方で、ViewModelScope の終了とともに VideoModelScope もキャンセルされるため、
+         * VideoModelScope 内で suspend 処理を実行すると、その処理が途中でキャンセルされてしまう場合があります。
+         *
+         * そのため、ViewModelScope よりも長く生存する CoroutineScope の利用が必要です。
+         *
+         * ここでは便宜上 GlobalScope を使用していますが、GlobalScope の利用は推奨されておらず、
+         * 本番環境では適切なスコープ設計（例：アプリケーションスコープ等）を検討してください。
+         */
+        GlobalScope.launch {
             if (memberMe != null) {
                 memberMe!!.leave()
             }
