@@ -6,9 +6,6 @@ Android公式サンプルアプリ [JetChat](https://github.com/android/compose-
 | <img src="screenshots/videochat/1_launch_videochat.png" width="300"/> | <img src="screenshots/videochat/2_join_room.png" width="300"/> | <img src="screenshots/videochat/3_more_member_join.png" width="300"/> | 
 
 
-# 構成図(Architectrue)
-TBA
-
 # ビデオチャット機能を実装する
 [JetChat](https://github.com/android/compose-samples/tree/main/Jetchat)とのコード差分は[こちら](https://github.com/Jin-NeVen/SkyWayJetChat/compare/d7de556...main)
 
@@ -44,3 +41,19 @@ TBA
 ## NOTICE
 本サンプルアプリは、一応Android App Architectureに従って作ったつもりですが、便宜上一部のコードはBest Practiceに沿って実装されない場合がございます。
 
+# License
+```
+Copyright 2025 Jin
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    https://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+```
